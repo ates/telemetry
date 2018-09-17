@@ -72,6 +72,7 @@ functions(_Config) ->
 
 histograms(_Config) ->
     ok = telemetry:new(test, histogram),
+    ok = telemetry:new(test, histogram),
     ok = telemetry:update(test, histogram, 1),
     #{n := 1} = telemetry:value(test),
     ok = telemetry:reset(test),

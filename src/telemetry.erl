@@ -21,8 +21,6 @@
 -export([handle_call/3]).
 -export([handle_cast/2]).
 
--record(state, {}).
-
 -record(histogram, {
     tid = ets:new(?MODULE, [
         public,
@@ -146,8 +144,7 @@ values() ->
         end,
     lists:foldl(F, [], metrics()).
 
-init([]) ->
-    {ok, #state{}}.
+init([]) -> {ok, []}.
 
 handle_call({create_histogram, Name, Opts}, _From, State) ->
     case ets:lookup(?MODULE, Name) of

@@ -17,4 +17,7 @@ init([]) ->
         named_table,
         {write_concurrency, true}
     ]),
-    {ok, {{one_for_one, 10, 5}, [#{id => telemetry, start => {telemetry, start_link, []}}]}}.
+    Childs = [
+        #{id => telemetry, start => {telemetry, start_link, []}}
+    ],
+    {ok, {{one_for_one, 10, 5}, Childs}}.
