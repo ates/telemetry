@@ -1,0 +1,6 @@
+{application, telemetry, [
+    {description, ""},
+    {vsn, semver},
+    {applications, [kernel, stdlib]},
+    {mod, {telemetry_app, []}}
+]}.
