@@ -22,8 +22,10 @@
 -export([handle_cast/2]).
 
 -type metric_name() :: [term()].
+-type histogram_opts() :: #{window => non_neg_integer()}.
 
 -export_type([metric_name/0]).
+-export_type([histogram_opts/0]).
 
 -record(histogram, {
     tid = ets:new(?MODULE, [
@@ -48,7 +50,7 @@ new(Name, histogram) ->
 -spec new(
     Name  :: metric_name(),
     Type  :: counter | histogram | function,
-    Value :: integer() | function() | tuple() | map()
+    Value :: integer() | function() | tuple() | histogram_opts()
 ) -> integer() | ok.
 new(Name, counter, Value) ->
     ets:insert(?MODULE, {Name, counter, Value}),
