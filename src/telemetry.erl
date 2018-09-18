@@ -21,6 +21,10 @@
 -export([handle_call/3]).
 -export([handle_cast/2]).
 
+-type metric_name() :: [term()].
+
+-export_type([metric_name/0]).
+
 -record(histogram, {
     tid = ets:new(?MODULE, [
         public,
@@ -34,7 +38,7 @@
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
--spec new(Name :: term(), Type :: counter | histogram) -> integer().
+-spec new(Name :: metric_name(), Type :: counter | histogram) -> integer().
 new(Name, counter) ->
     new(Name, counter, 0);
 
@@ -42,7 +46,7 @@ new(Name, histogram) ->
     new(Name, histogram, #{}).
 
 -spec new(
-    Name  :: term(),
+    Name  :: metric_name(),
     Type  :: counter | histogram | function,
     Value :: integer() | function() | tuple() | map()
 ) -> integer() | ok.
@@ -58,7 +62,7 @@ new(Name, histogram, Opts) ->
     gen_server:call(?MODULE, {create_histogram, Name, Opts}).
 
 -spec update(
-    Name  :: term(),
+    Name  :: metric_name(),
     Type  :: counter | histogram,
     Value :: integer()
 ) -> integer() | ok.
@@ -73,7 +77,7 @@ update(Name, histogram, Value) ->
             ok
     end.
 
--spec delete(Name :: term()) -> ok.
+-spec delete(Name :: metric_name()) -> ok.
 delete(Name) ->
     case ets:take(?MODULE, Name) of
         [] -> ok;
@@ -85,11 +89,11 @@ delete(Name) ->
             ok
     end.
 
--spec reset(Name :: term()) -> ok.
+-spec reset(Name :: metric_name()) -> ok.
 reset(Name) ->
     reset(Name, 0).
 
--spec reset(Name :: term(), Value :: integer()) -> ok.
+-spec reset(Name :: metric_name(), Value :: integer()) -> ok.
 reset(Name, Value) ->
     case ets:lookup(?MODULE, Name) of
         [{Name, counter, _Value}] ->
@@ -101,14 +105,14 @@ reset(Name, Value) ->
         _ -> ok
     end.
 
--spec is_metric(Name :: term()) -> boolean().
+-spec is_metric(Name :: metric_name()) -> boolean().
 is_metric(Name) ->
     case ets:lookup(?MODULE, Name) of
         [] -> false;
         [{Name, _Type, _Value}] -> true
     end.
 
--spec value(Name :: term()) -> integer() | undefined.
+-spec value(Name :: metric_name()) -> integer() | map() | list() | undefined.
 value(Name) ->
     case ets:lookup(?MODULE, Name) of
         [] -> undefined;
@@ -128,16 +132,18 @@ value(Name) ->
             end
     end.
 
--spec metrics() -> [term()].
+-spec metrics() -> [metric_name()].
 metrics() ->
     ets:foldl(fun(E, Acc) -> [element(1, E) | Acc] end, [], ?MODULE).
 
--spec values() -> [{term(), integer() | map()}].
+-spec values() -> [{metric_name(), integer() | map()}].
 values() ->
     F =
         fun(Name, Acc) ->
             case value(Name) of
                 undefined -> Acc;
+                Value when is_list(Value) ->
+                    [{Name ++ [DP], N} || {DP, N} <- Value] ++ Acc;
                 Value ->
                     [{Name, Value} | Acc]
             end
