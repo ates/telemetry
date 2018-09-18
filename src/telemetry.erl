@@ -152,7 +152,19 @@ values() ->
         end,
     lists:foldl(F, [], metrics()).
 
-init([]) -> {ok, []}.
+init([]) ->
+    Metrics = [
+        {[vm, ports, count],           {erlang, system_info, [port_count]}},
+        {[vm, process, count],         {erlang, system_info, [process_count]}},
+        {[vm, memory, ets],            {erlang, memory, [ets]}},
+        {[vm, memory, binary],         {erlang, memory, [binary]}},
+        {[vm, memory, atom],           {erlang, memory, [atom]}},
+        {[vm, memory, total],          {erlang, memory, [total]}},
+        {[vm, memory, processes],      {erlang, memory, [processes]}},
+        {[vm, memory, processes_used], {erlang, memory, [processes_used]}}
+    ],
+    lists:foreach(fun({Name, Fun}) -> new(Name, function, Fun) end, Metrics),
+    {ok, []}.
 
 handle_call({create_histogram, Name, Opts}, _From, State) ->
     case ets:lookup(?MODULE, Name) of
