@@ -1,5 +1,5 @@
 {application, telemetry, [
-    {description, ""},
+    {description, "Metrics library and instrumentations"},
     {vsn, semver},
     {applications, [kernel, stdlib]},
     {mod, {telemetry_app, []}}
