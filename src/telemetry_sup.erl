@@ -18,6 +18,7 @@ init([]) ->
         {write_concurrency, true}
     ]),
     Childs = [
-        #{id => telemetry, start => {telemetry, start_link, []}}
+        #{id => telemetry, start => {telemetry, start_link, []}},
+        #{id => telemetry_snapshot, start => {telemetry_snapshot, start_link, []}}
     ],
     {ok, {{one_for_one, 10, 5}, Childs}}.

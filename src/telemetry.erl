@@ -32,9 +32,9 @@
         public,
         duplicate_bag,
         {write_concurrency, true}
-    ])          :: ets:tid(),
-    window = 60 :: pos_integer(),
-    trim_proc   :: undefined | pid()
+    ])                     :: ets:tid(),
+    opts = #{window => 60} :: histogram_opts(),
+    trim_proc              :: undefined | pid()
 }).
 
 start_link() ->
@@ -45,7 +45,7 @@ new(Name, counter) ->
     new(Name, counter, 0);
 
 new(Name, histogram) ->
-    new(Name, histogram, #{}).
+    new(Name, histogram, #{window => 60}).
 
 -spec new(
     Name  :: metric_name(),
@@ -120,7 +120,7 @@ value(Name) ->
         [] -> undefined;
         [{Name, counter, Value}] ->
             Value;
-        [{Name, histogram, #histogram{tid = TID, window = Window}}] ->
+        [{Name, histogram, #histogram{tid = TID, opts = #{window := Window}}}] ->
             Delta = erlang:system_time(seconds) - Window,
             Values = ets:select(TID, [{{'$1','$2'}, [{'>=', '$1', Delta}], ['$2']}]),
             format_histogram_values(Values);
@@ -169,9 +169,7 @@ init([]) ->
 handle_call({create_histogram, Name, Opts}, _From, State) ->
     case ets:lookup(?MODULE, Name) of
         [] ->
-            Histogram = #histogram{
-                window = maps:get(window, Opts, 60)
-            },
+            Histogram = #histogram{opts = Opts},
             TrimProc = spawn(fun() -> trim_histogram(Histogram) end),
             ets:insert(?MODULE, {Name, histogram, Histogram#histogram{trim_proc = TrimProc}});
         _ -> ok
@@ -183,7 +181,7 @@ handle_cast(_Msg, State) -> {noreply, State}.
 run_function(Fun) when is_function(Fun) -> Fun();
 run_function({M, F, A}) -> erlang:apply(M, F, A).
 
-trim_histogram(#histogram{tid = TID, window = Window} = Histogram) ->
+trim_histogram(#histogram{tid = TID, opts = #{window := Window}} = Histogram) ->
     receive
         _ -> ok
     after Window * 1000 div 2 ->
